@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EDHREC Random Commander Deck Finder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 max-w-4xl mx-auto">
+
+  <header class="mb-6 text-center">
+    <h1 class="text-4xl font-bold mb-2">EDHREC Random Commander Deck Finder</h1>
+    <p class="text-gray-400 max-w-xl mx-auto">Quickly find a random high-quality EDH Commander deck. Select your parameters and click Generate!</p>
+  </header>
+
+  <section class="w-full space-y-4 mb-6">
+    <div>
+      <label for="theme" class="block mb-1 font-semibold">Theme / Archetype</label>
+      <select id="theme" class="w-full p-2 rounded bg-gray-800 text-gray-200">
+        <!-- Populate with themes -->
+      </select>
+    </div>
+    <div>
+      <label for="power" class="block mb-1 font-semibold">Power Bracket</label>
+      <select id="power" class="w-full p-2 rounded bg-gray-800 text-gray-200">
+        <option value="any">Any</option>
+        <option value="1">1 (Casual)</option>
+        <option value="2">2 (Moderate)</option>
+        <option value="3">3 (Competitive Casual)</option>
+        <option value="4">4 (Highly Competitive)</option>
+        <option value="5">5 (Top Tier Competetive)</option>
+      </select>
+    </div>
+    <div>
+      <label for="color" class="block mb-1 font-semibold">Color Identity</label>
+      <select id="color" class="w-full p-2 rounded bg-gray-800 text-gray-200">
+        <option value="any">Any</option>
+        <option value="W">Mono-White</option>
+        <option value="U">Mono-Blue</option>
+        <option value="B">Mono-Black</option>
+        <option value="R">Mono-Red</option>
+        <option value="G">Mono-Green</option>
+        <option value="WU">Azorius (WU)</option>
+        <option value="UB">Dimir (UB)</option>
+        <option value="BR">Rakdos (BR)</option>
+        <option value="RG">Gruul (RG)</option>
+        <option value="GW">Selesnya (GW)</option>
+        <option value="WUB">Esper (WUB)</option>
+        <option value="UBR">Grixis (UBR)</option>
+        <option value="BRG">Jund (BRG)</option>
+        <option value="RGW">Naya (RGW)</option>
+        <option value="GWU">Bant (GWU)</option>
+        <option value="WBR">Mardu (WBR)</option>
+        <option value="URG">Temur (URG)</option>
+        <option value="WUBRG">Five-Color</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="w-full flex gap-4 mb-6">
+    <button id="generateBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded font-semibold transition">Generate Random Deck</button>
+    <button id="rerollBtn" disabled class="flex-1 bg-gray-600 text-gray-300 p-3 rounded font-semibold transition cursor-not-allowed">Reroll</button>
+  </section>
+
+  <section id="result" class="w-full bg-gray-900 rounded p-4 space-y-4 hidden">
+    <div class="flex flex-col md:flex-row items-center gap-4">
+      <img id="commanderImg" src="" alt="Commander Image" class="rounded max-w-[150px] max-h-[210px] shadow-lg border border-gray-700" />
+      <div class="flex-1">
+        <h2 id="commanderName" class="text-2xl font-bold"></h2>
+        <a id="edhrecLink" href="#" target="_blank" rel="noopener" class="inline-block mt-1 text-blue-400 hover:underline">View on EDHREC</a>
+      </div>
+    </div>
+    <div>
+      <h3 class="font-semibold mb-2">Deck Preview (Top 10 Cards)</h3>
+      <ul id="deckList" class="list-disc list-inside max-h-60 overflow-y-auto text-sm"></ul>
+    </div>
+  </section>
+
+  <footer class="mt-auto pt-6 text-gray-400 text-sm max-w-3xl text-center">
+    <p>Instructions:</p>
+    <p>Click the EDHREC link → Look for Average Deck or user decks → Use their Moxfield export button to import into Moxfield / Tabletop Simulator.</p>
+  </footer>
+
+  <!-- Hidden signature text -->
+  <p style="color: transparent; font-size: 1px; user-select:none; position: fixed; bottom: 0; left: 0; pointer-events: none;">
+    ryan andrew clark aka the life link god
+  </p>
+
+  <script>
+    const data = {
+      "Tokens": [
+        { name: "Rhys the Redeemed", slug: "rhys-the-redeemed", power: 2, colors: "GW" },
+        { name: "Sram, Senior Edificer", slug: "sram-senior-edificer", power: 1, colors: "W" },
+        { name: "Samut, Voice of Dissent", slug: "samut-voice-of-dissent", power: 3, colors: "RGW" }
+      ],
+      "Aristocrats": [
+        { name: "Teysa Karlov", slug: "teysa-karlov", power: 3, colors: "WB" },
+        { name: "Athreos, God of Passage", slug: "athreos-god-of-passage", power: 4, colors: "WB" },
+        { name: "Elenda, the Dusk Rose", slug: "elenda-the-dusk-rose", power: 3, colors: "WB" }
+      ],
+      "Landfall": [
+        { name: "Omnath, Locus of Creation", slug: "omnath-locus-of-creation", power: 4, colors: "WURG" },
+        { name: "Tatyova, Benthic Druid", slug: "tatyova-benthic-druid", power: 3, colors: "UG" },
+        { name: "Archelos, Lagoon Mystic", slug: "archelos-lagoon-mystic", power: 3, colors: "UGW" }
+      ],
+      "Voltron": [
+        { name: "Aurelia, the Warleader", slug: "aurelia-the-warleader", power: 3, colors: "WR" },
+        { name: "Edgar Markov", slug: "edgar-markov", power: 4, colors: "WBR" },
+        { name: "Urza, Lord High Artificer", slug: "urza-lord-high-artificer", power: 5, colors: "U" }
+      ],
+      "+1/+1 Counters": [
+        { name: "Hapatra, Vizier of Poisons", slug: "hapatra-vizier-of-poisons", power: 3, colors: "BG" },
+        { name: "Vorel of the Hull Clade", slug: "vorel-of-the-hull-clade", power: 2, colors: "GU" },
+        { name: "Mayael the Anima", slug: "mayael-the-anima", power: 3, colors: "RGW" }
+      ],
+      "Combo": [
+        { name: "Narset, Parter of Veils", slug: "narset-parter-of-veils", power: 4, colors: "UR" },
+        { name: "Kess, Dissident Mage", slug: "kess-dissident-mage", power: 4, colors: "UBR" },
+        { name: "Niv-Mizzet, Parun", slug: "niv-mizzet-parun", power: 5, colors: "UR" }
+      ],
+      "Reanimator": [
+        { name: "Meren of Clan Nel Toth", slug: "meren-of-clan-nel-toth", power: 3, colors: "BG" },
+        { name: "Yawgmoth, Thran Physician", slug: "yawgmoth-thran-physician", power: 5, colors: "B" },
+        { name: "Chainer, Dementia Master", slug: "chainer-dementia-master", power: 4, colors: "BR" }
+      ],
+      "Lifegain": [
+        { name: "Ayli, Eternal Pilgrim", slug: "ayli-eternal-pilgrim", power: 3, colors: "WB" },
+        { name: "Oloro, Ageless Ascetic", slug: "oloro-ageless-ascetic", power: 3, colors: "WUB" },
+        { name: "Karlov of the Ghost Council", slug: "karlov-of-the-ghost-council", power: 3, colors: "WB" }
+      ],
+      "Equipment": [
+        { name: "Kemba, Kha Regent", slug: "kemba-kha-regent", power: 2, colors: "W" },
+        { name: "Tajic, Blade of the Legion", slug: "tajic-blade-of-the-legion", power: 3, colors: "WR" },
+        { name: "Naramura, the Reborn", slug: "naramura-the-reborn", power: 2, colors: "W" }
+      ],
+      "Artifacts": [
+        { name: "Saheeli, the Gifted", slug: "saheeli-the-gifted", power: 3, colors: "UR" },
+        { name: "Breya, Etherium Shaper", slug: "breya-etherium-shaper", power: 4, colors: "WUBR" },
+        { name: "Marchesa, the Black Rose", slug: "marchesa-the-black-rose", power: 4, colors: "UBR" }
+      ]
+    };
+
+    function toColorSet(colors) {
+      return new Set(colors.split(''));
+    }
+
+    function colorMatches(deckColors, selected) {
+      if (selected === "any") return true;
+      if (selected === "WUBRG" && deckColors.size === 5) return true;
+      if (selected.length === 1 && deckColors.size === 1 && deckColors.has(selected)) return true;
+      const selectSet = toColorSet(selected);
+      if (deckColors.size === selectSet.size) {
+        for (let c of deckColors) {
+          if (!selectSet.has(c)) return false;
+        }
+        return true;
+      }
+      return false;
+    }
+
+    const themeSelect = document.getElementById('theme');
+    const powerSelect = document.getElementById('power');
+    const colorSelect = document.getElementById('color');
+    const generateBtn = document.getElementById('generateBtn');
+    const rerollBtn = document.getElementById('rerollBtn');
+    const resultSection = document.getElementById('result');
+    const commanderNameEl = document.getElementById('commanderName');
+    const commanderImgEl = document.getElementById('commanderImg');
+    const deckListEl = document.getElementById('deckList');
+    const edhrecLinkEl = document.getElementById('edhrecLink');
+
+    let currentCandidates = [];
+    let lastParameters = null;
+    let lastCommander = null;
+
+    function populateThemeDropdown() {
+      Object.keys(data).forEach(theme => {
+        const opt = document.createElement('option');
+        opt.value = theme;
+        opt.textContent = theme;
+        themeSelect.appendChild(opt);
+      });
+    }
+
+    function filterCandidates(theme, power, color) {
+      let candidates = [];
+      if (theme === "any") {
+        Object.values(data).forEach(commList => candidates.push(...commList));
+      } else if (data[theme]) {
+        candidates = data[theme].slice();
+      }
+
+      if (power !== "any") {
+        candidates = candidates.filter(c => c.power <= parseInt(power));
+      }
+      candidates = candidates.filter(c => colorMatches(toColorSet(c.colors), color));
+
+      return candidates;
+    }
+
+    async function fetchCommanderData(slug) {
+      const scryfallUrl = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(slug.replace(/-/g, ' '))}`;
+      let cardData;
+      try {
+        const res = await fetch(scryfallUrl);
+        if (!res.ok) throw new Error('Scryfall card not found');
+        cardData = await res.json();
+      } catch (e) {
+        return null;
+      }
+
+      const edhrecJsonUrl = `https://json.edhrec.com/pages/commanders/${slug}.json`;
+      let deckData = null;
+      try {
+        const res = await fetch(edhrecJsonUrl);
+        if (!res.ok) throw new Error('EDHREC data not found');
+        deckData = await res.json();
+      } catch (e) {}
+
+      return { card: cardData, deck: deckData };
+    }
+
+    function buildDeckPreview(deckData) {
+      if (!deckData || !deckData.average) return ['No deck data available.'];
+
+      const cardEntries = Object.entries(deckData.average);
+      cardEntries.sort((a,b) => b[1] - a[1]);
+      const topCards = cardEntries.slice(0, 10).map(([name, count]) => `${name} (${Math.round(count * 100)}%)`);
+
+      return topCards;
+    }
+
+    function showResult(commander, deckPreview) {
+      commanderNameEl.textContent = commander.name;
+      commanderImgEl.src = commander.image_uris?.normal || commander.card_faces?.[0]?.image_uris?.normal || '';
+      commanderImgEl.alt = commander.name;
+
+      deckListEl.innerHTML = '';
+      deckPreview.forEach(line => {
+        const li = document.createElement('li');
+        li.textContent = line;
+        deckListEl.appendChild(li);
+      });
+
+      edhrecLinkEl.href = `https://edhrec.com/commanders/${lastCommander.slug}`;
+      edhrecLinkEl.textContent = `View on EDHREC`;
+
+      resultSection.classList.remove('hidden');
+      rerollBtn.disabled = false;
+      rerollBtn.classList.remove('cursor-not-allowed', 'text-gray-300');
+      rerollBtn.classList.add('text-white');
+    }
+
+    async function generateRandomDeck(themeVal, powerVal, colorVal) {
+      currentCandidates = filterCandidates(themeVal, powerVal, colorVal);
+
+      if (currentCandidates.length === 0) {
+        alert('No commanders found matching your parameters. Please try different options.');
+        return;
+      }
+
+      const chosen = currentCandidates[Math.floor(Math.random() * currentCandidates.length)];
+      lastCommander = chosen;
+
+      const data = await fetchCommanderData(chosen.slug);
+
+      if (!data || !data.card) {
+        alert('Failed to load commander data. Please try again.');
+        return;
+      }
+
+      const deckPreview = buildDeckPreview(data.deck);
+      showResult(data.card, deckPreview);
+    }
+
+    generateBtn.addEventListener('click', () => {
+      const themeVal = themeSelect.value;
+      const powerVal = powerSelect.value;
+      const colorVal = colorSelect.value;
+
+      lastParameters = { theme: themeVal, power: powerVal, color: colorVal };
+
+      generateRandomDeck(themeVal, powerVal, colorVal);
+    });
+
+    rerollBtn.addEventListener('click', () => {
+      if (!lastParameters || currentCandidates.length === 0) return;
+
+      let filtered = currentCandidates.filter(c => c.slug !== lastCommander.slug);
+      if (filtered.length === 0) filtered = currentCandidates;
+
+      const chosen = filtered[Math.floor(Math.random() * filtered.length)];
+      lastCommander = chosen;
+
+      fetchCommanderData(chosen.slug).then(data => {
+        if (!data || !data.card) {
+          alert('Failed to load commander data. Please try again.');
+          return;
+        }
+        const deckPreview = buildDeckPreview(data.deck);
+        showResult(data.card, deckPreview);
+      });
+    });
+
+    function init() {
+      const anyOpt = document.createElement('option');
+      anyOpt.value = "any";
+      anyOpt.textContent = "Any";
+      themeSelect.appendChild(anyOpt);
+      populateThemeDropdown();
+      themeSelect.value = "any";
+      powerSelect.value = "any";
+      colorSelect.value = "any";
+    }
+
+    init();
+  </script>
+</body>
+</html>
